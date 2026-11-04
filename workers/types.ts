@@ -5,4 +5,5 @@
 export interface Env extends Cloudflare.Env {
 	POLICY_AUD: string;
 	TEAM_DOMAIN: string;
+	NOTIFY_TOKEN?: string;
 }
