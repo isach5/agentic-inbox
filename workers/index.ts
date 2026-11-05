@@ -350,6 +350,28 @@ async function streamToArrayBuffer(stream: ReadableStream, streamSize: number) {
 	return result;
 }
 
+async function notifySlack(env: Env, e: { mailboxId: string; messageId: string; from: string; subject: string }) {
+	if (!env.NOTIFY_TOKEN) return;
+	try {
+		const res = await fetch("https://notify.emuniq.com/notify", {
+			method: "POST",
+			headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.NOTIFY_TOKEN}` },
+			body: JSON.stringify({
+				source: "mail-csec",
+				level: "info",
+				title: `Correo nuevo en ${e.mailboxId}`.slice(0, 500),
+				message: `De: ${e.from || "(desconocido)"}\nAsunto: ${e.subject}`.slice(0, 4000),
+				url: "https://mail.csec.mx/",
+				dedupe_key: `mail:${e.mailboxId}:${e.messageId}`,
+			}),
+			signal: AbortSignal.timeout(5000),
+		});
+		if (!res.ok) console.error("Notify failed:", res.status);
+	} catch (err) {
+		console.error("Notify error:", (err as Error).name);
+	}
+}
+
 async function receiveEmail(event: { raw: ReadableStream; rawSize: number }, env: Env, ctx: ExecutionContext) {
 	const rawEmail = await streamToArrayBuffer(event.raw, event.rawSize);
 	const parsedEmail = await new PostalMime().parse(rawEmail);
@@ -406,6 +428,8 @@ async function receiveEmail(event: { raw: ReadableStream; rawSize: number }, env
 		in_reply_to: inReplyTo, email_references: emailReferences.length > 0 ? JSON.stringify(emailReferences) : null,
 		thread_id: threadId, message_id: originalMessageId, raw_headers: JSON.stringify(parsedEmail.headers),
 	}, attachmentData);
+
+	ctx.waitUntil(notifySlack(env, { mailboxId, messageId, from: (parsedEmail.from?.address || "").toLowerCase(), subject: parsedEmail.subject || "(sin asunto)" }));
 
 	if (isAgentEnabled(env) && env.EMAIL_AGENT) {
 		const agentStub = env.EMAIL_AGENT.get(env.EMAIL_AGENT.idFromName(mailboxId));
