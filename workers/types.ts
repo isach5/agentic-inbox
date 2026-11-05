@@ -7,6 +7,7 @@ export interface Env extends Omit<
 	"AI" | "EMAIL_AGENT" | "EMAIL_MCP" | "ENABLE_AI_AGENT" | "ENABLE_MCP"
 > {
 	POLICY_AUD: string;
+	NOTIFY_TOKEN?: string;
 	TEAM_DOMAIN: string;
 	ENABLE_AI_AGENT?: string | boolean;
 	ENABLE_MCP?: string | boolean;
