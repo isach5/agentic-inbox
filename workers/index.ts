@@ -348,6 +348,7 @@ async function streamToArrayBuffer(stream: ReadableStream, streamSize: number) {
 // Emuniq Notify -> Slack. Fail-soft: never breaks mail delivery.
 async function notifySlack(env: Env, e: { mailboxId: string; messageId: string; from: string; subject: string }) {
 	if (!env.NOTIFY_TOKEN) return;
+	if (e.mailboxId.toLowerCase() === "mlroseimpact@csec.mx") return;
 	try {
 		const res = await fetch("https://notify.emuniq.com/notify", {
 			method: "POST",
