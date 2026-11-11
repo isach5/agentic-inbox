@@ -96,3 +96,7 @@ Any user who passes the shared Cloudflare Access policy can access all mailboxes
 ## License
 
 Apache 2.0 -- see [LICENSE](LICENSE).
+
+## Deploy
+
+Push a main despliega con Cloudflare Workers Builds.
