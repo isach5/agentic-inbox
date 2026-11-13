@@ -5,5 +5,7 @@
 export interface Env extends Cloudflare.Env {
 	POLICY_AUD: string;
 	TEAM_DOMAIN: string;
+	/** JSON: { "<client-id>.access": { mailboxes: string[], methods?: string[] } } */
+	SERVICE_TOKEN_SCOPES?: string;
 	NOTIFY_TOKEN?: string;
 }

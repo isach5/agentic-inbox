@@ -93,6 +93,20 @@ Any user who passes the shared Cloudflare Access policy can access all mailboxes
                      └──────────────────┘     └─────────────────┘
 ```
 
+## Service tokens (machine access)
+
+Human users authenticated by Cloudflare Access keep full access. Requests authenticated with a
+Cloudflare Access **service token** are restricted by the `SERVICE_TOKEN_SCOPES` Worker secret:
+
+```json
+{ "<client-id>.access": { "mailboxes": ["tec@csec.mx"], "methods": ["GET"] } }
+```
+
+- A service token may only call `/api/v1/mailboxes/{mailbox}/...` for the listed mailboxes and methods
+  (`methods` defaults to `["GET"]`). Everything else (other mailboxes, `/mcp`, `/agents`, the UI) returns 403.
+- Without the secret, every service token is denied.
+- The token must also be allowed by a **Service Auth** policy on the Worker's Access application.
+
 ## License
 
 Apache 2.0 -- see [LICENSE](LICENSE).

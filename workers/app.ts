@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import { createRequestHandler } from "react-router";
 import { app as apiApp, receiveEmail } from "./index";
+import { checkServiceTokenScope, isServiceToken, parseScopes } from "./serviceTokenScopes";
 import { EmailMCP } from "./mcp";
 import type { Env } from "./types";
 
@@ -64,15 +65,31 @@ app.use("*", async (c, next) => {
 		return c.text("Missing required CF Access JWT", 403);
 	}
 
+	let payload: Record<string, unknown>;
 	try {
 		const { issuer, certsUrl } = getAccessUrls(TEAM_DOMAIN);
 		const JWKS = createRemoteJWKSet(certsUrl);
-		await jwtVerify(token, JWKS, {
+		({ payload } = await jwtVerify(token, JWKS, {
 			issuer,
 			audience: POLICY_AUD,
-		});
+		}));
 	} catch {
 		return c.text("Invalid or expired Access token", 403);
+	}
+
+	// Service tokens (machine clients) are restricted to the mailboxes and methods
+	// granted in the SERVICE_TOKEN_SCOPES secret. No secret => all service tokens denied.
+	if (isServiceToken(payload)) {
+		const decision = checkServiceTokenScope(
+			payload,
+			c.req.method,
+			new URL(c.req.url).pathname,
+			parseScopes(c.env.SERVICE_TOKEN_SCOPES),
+		);
+		if (!decision.allowed) {
+			return c.text(decision.reason, 403);
+		}
+		return next();
 	}
 
 	// Authorization model note: once a teammate passes the shared Cloudflare
