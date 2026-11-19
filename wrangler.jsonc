@@ -29,9 +29,6 @@
 			"preview_bucket_name": "agentic-inbox"
 		}
 	],
-	"ai": {
-		"binding": "AI"
-	},
 	"durable_objects": {
 		"bindings": [
 			{
